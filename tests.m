@@ -6,48 +6,48 @@ function my_tests()
 	label_db = cell(1);
 	fd_db = cell(1);
 	for im = 1:numel(img_db_list);
-		img_db{im} = logical(imread(img_db_list{im}));
-		label_db{im} = get_label(img_db_list{im});
-		disp(label_db{im}); 
-		[fd_db{im},~,~,~] = compute_fd(img_db{im});
+	img_db{im} = logical(imread(img_db_list{im}));
+	label_db{im} = get_label(img_db_list{im});
+	disp(label_db{im}); 
+	[fd_db{im},~,~,~] = compute_fd(img_db{im});
 	end
 
 	% importation des images de requête dans une liste
 	img_path = './dbq/';
 	img_list = glob([img_path, '*.gif']);
-	t=tic()
+t=tic()
 
 	% pour chaque image de la liste...
 	for im = 1:numel(img_list)
 
-		% calcul du descripteur de Fourier de l'image
-		img = logical(imread(img_list{im}));
-		[fd,r,m,poly] = compute_fd(img);
+	% calcul du descripteur de Fourier de l'image
+	img = logical(imread(img_list{im}));
+	[fd,r,m,poly] = compute_fd(img);
 
-		% calcul et tri des scores de distance aux descripteurs de la base
-		for i = 1:length(fd_db)
-			scores(i) = norm(fd-fd_db{i});
-		end
-		[scores, I] = sort(scores);
-
-		% affichage des résultats    
-		close all;
-		figure(1);
-		top = 5; % taille du top-rank affiché
-		subplot(2,top,1);
-		imshow(img); hold on;
-		plot(m(1),m(2),'+b'); % affichage du barycentre
-		plot(poly(:,1),poly(:,2),'v-g','MarkerSize',1,'LineWidth',1); % affichage du contour calculé
-		subplot(2,top,2:top);
-		plot(r); % affichage du profil de forme
-		for i = 1:top
-			subplot(2,top,top+i);
-			imshow(img_db{I(i)}); % affichage des top plus proches images
-		end
-		drawnow();
-		waitforbuttonpress();
+	% calcul et tri des scores de distance aux descripteurs de la base
+	for i = 1:length(fd_db)
+	scores(i) = norm(fd-fd_db{i});
 	end
-end
+	[scores, I] = sort(scores);
+
+	% affichage des résultats    
+	close all;
+	figure(1);
+	top = 5; % taille du top-rank affiché
+	subplot(2,top,1);
+	imshow(img); hold on;
+	plot(m(1),m(2),'+b'); % affichage du barycentre
+	plot(poly(:,1),poly(:,2),'v-g','MarkerSize',1,'LineWidth',1); % affichage du contour calculé
+	subplot(2,top,2:top);
+	plot(r); % affichage du profil de forme
+	for i = 1:top
+	subplot(2,top,top+i);
+	imshow(img_db{I(i)}); % affichage des top plus proches images
+	end
+	drawnow();
+	waitforbuttonpress();
+	end
+	end
 
 
 
@@ -64,48 +64,48 @@ function [fd,r,m,poly] = compute_fd(img)
 	t = linspace(0,2*pi,N);
 
 	for k = 1:N   %parcours de chacun des N angles
-		l=1;
-		tmpX = x;
-		tmpY = y;
+	l=1;
+	tmpX = x;
+	tmpY = y;
 
-		% tant que l'on ne depasse pas encore les bordures de l'image
-		while(tmpX > 1 && tmpY > 1 && tmpX < w && tmpY < h)
-			% point qui se trouve sur la droite de l'angle
-            res = cartesianCoord(x,y,l,t(1,k));
-			tmpX = res(1);
-			tmpY = res(2);
-			l = l+1;
-		end
+	% tant que l'on ne depasse pas encore les bordures de l'image
+while(tmpX > 1 && tmpY > 1 && tmpX < w && tmpY < h)
+	% point qui se trouve sur la droite de l'angle
+	res = cartesianCoord(x,y,l,t(1,k));
+	tmpX = res(1);
+	tmpY = res(2);
+	l = l+1;
+	end
 
-		%bord de l'image
-		bordAbs = tmpX;
-		bordOrd = tmpY;
-		iters = l;
-		
-
-		% operation entre poly et tmp
-		for n = 1:iters
-			%calcul de la distance au barycentre en provenance du bord de l'image
-			res = cartesianCoord(bordAbs,bordOrd,-n,t(1,k));
-            tmpX = res(1);
-            tmpY = res(2);
-			% on s'arrete si on trouve un pixel blanc et on ajoute le contour dans le polygone
-			if (img(tmpY,tmpX) == 1)
-				poly(k,1)=tmpX;
-				poly(k,2)=tmpY;
-				r(1,k) = distanceEucl(x, y, tmpX, tmpY);
-				break;
-			end
-			
-
-		end
-		if(n==iters)
-			poly(k,1) = bordAbs;
-			poly(k,2) = bordOrd;
-			r(1,k) = distanceEucl(x, y, bordAbs, bordOrd);
+	%bord de l'image
+	bordAbs = tmpX;
+	bordOrd = tmpY;
+	iters = l;
 
 
-		end
+	% operation entre poly et tmp
+	for n = 1:iters
+	%calcul de la distance au barycentre en provenance du bord de l'image
+	res = cartesianCoord(bordAbs,bordOrd,-n,t(1,k));
+	tmpX = res(1);
+	tmpY = res(2);
+	% on s'arrete si on trouve un pixel blanc et on ajoute le contour dans le polygone
+if (img(tmpY,tmpX) == 1)
+	poly(k,1)=tmpX;
+	poly(k,2)=tmpY;
+	r(1,k) = distanceEucl(x, y, tmpX, tmpY);
+	break;
+	end
+
+
+	end
+if(n==iters)
+	poly(k,1) = bordAbs;
+	poly(k,2) = bordOrd;
+	r(1,k) = distanceEucl(x, y, bordAbs, bordOrd);
+
+
+	end
 
 	end
 
@@ -116,25 +116,25 @@ function [fd,r,m,poly] = compute_fd(img)
 	fd(1, 1:M) = abs(R(1,1:M))/abs(tf_r0);
 
 
-end
+	end
 
 
 function m = barycentre(img)
-    %liste des points égaux à 1
+	%liste des points égaux à 1
 	[col, row] = find(img>0);
 	% somme de toutes les colonnes avec des pixels blancs
 	% somme de toutes les lignes avec des pixels blancs
 	% puis moyenne
 	m = mean([row, col]);   % on inverse row et col pour le barycentre pixel blanc
-end
+	end
 
 
 function dist = distanceEucl(abs1, ord1, abs2, ord2)
-    dist = ((abs2 - abs1).^2 + (ord2 - ord1).^2) .^(0.5);
-end
+	dist = ((abs2 - abs1).^2 + (ord2 - ord1).^2) .^(0.5);
+	end
 
 function res = cartesianCoord(xi, yi, ro, theta)
-    abs = round(xi + ro*cos(theta));
-    ord = round(yi + ro*sin(theta));
-    res = [abs, ord];
-end
+	abs = round(xi + ro*cos(theta));
+	ord = round(yi + ro*sin(theta));
+	res = [abs, ord];
+	end
