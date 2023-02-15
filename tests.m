@@ -49,17 +49,14 @@ function my_tests()
 	end
 end
 
+
+
 function [fd,r,m,poly] = compute_fd(img)
 	N = 110; % nombre de valeurs d'angle
 	M = 63; % nombre des M premiers coefficients du vecteur R(f) / R(0)
 	h = size(img,1);
 	w = size(img,2);
-	%liste des points égaux à 1, equivalent a find(img>0)
-	[col, row] = find(img);
-	% somme de toutes les colonnes avec des pixels blancs
-	% somme de toutes les lignes avec des pixels blancs
-	% puis moyenne
-	m = mean([row, col]);   % on inverse row et col pour le barycentre pixel blanc
+	m = barycentre(img);
 	x = m(1); y = m(2);
 
 	r = zeros(1,N);
@@ -72,10 +69,11 @@ function [fd,r,m,poly] = compute_fd(img)
 		tmpY = y;
 
 		% tant que l'on ne depasse pas encore les bordures de l'image
-		while((tmpX > 1 && tmpY > 1)&&(tmpX < w && tmpY < h))
+		while(tmpX > 1 && tmpY > 1 && tmpX < w && tmpY < h)
 			% point qui se trouve sur la droite de l'angle
-			tmpX = round(x + l * cos(t(1,k)));
-			tmpY = round(y + l * sin(t(1,k)));
+            res = cartesianCoord(x,y,l,t(1,k));
+			tmpX = res(1);
+			tmpY = res(2);
 			l = l+1;
 		end
 
@@ -83,27 +81,28 @@ function [fd,r,m,poly] = compute_fd(img)
 		bordAbs = tmpX;
 		bordOrd = tmpY;
 		iters = l;
-		n=1;
+		
 
 		% operation entre poly et tmp
-		while(n<iters)
+		for n = 1:iters
 			%calcul de la distance au barycentre en provenance du bord de l'image
-			tmpX=round(bordAbs-n*cos(t(1,k)));
-			tmpY=round(bordOrd-n*sin(t(1,k)));
+			res = cartesianCoord(bordAbs,bordOrd,-n,t(1,k));
+            tmpX = res(1);
+            tmpY = res(2);
 			% on s'arrete si on trouve un pixel blanc et on ajoute le contour dans le polygone
 			if (img(tmpY,tmpX) == 1)
 				poly(k,1)=tmpX;
 				poly(k,2)=tmpY;
-				r(1,k)=((tmpX-x).^2+(tmpY-y).^2).^(1/2);
+				r(1,k) = distanceEucl(x, y, tmpX, tmpY);
 				break;
 			end
-			n=n+1;
+			
 
 		end
 		if(n==iters)
 			poly(k,1) = bordAbs;
 			poly(k,2) = bordOrd;
-			r(1,k) = ((bordAbs - x).^2 + (bordOrd - y).^2).^(1/2);
+			r(1,k) = distanceEucl(x, y, bordAbs, bordOrd);
 
 
 		end
@@ -117,4 +116,25 @@ function [fd,r,m,poly] = compute_fd(img)
 	fd(1, 1:M) = abs(R(1,1:M))/abs(tf_r0);
 
 
+end
+
+
+function m = barycentre(img)
+    %liste des points égaux à 1
+	[col, row] = find(img>0);
+	% somme de toutes les colonnes avec des pixels blancs
+	% somme de toutes les lignes avec des pixels blancs
+	% puis moyenne
+	m = mean([row, col]);   % on inverse row et col pour le barycentre pixel blanc
+end
+
+
+function dist = distanceEucl(abs1, ord1, abs2, ord2)
+    dist = ((abs2 - abs1).^2 + (ord2 - ord1).^2) .^(0.5);
+end
+
+function res = cartesianCoord(xi, yi, ro, theta)
+    abs = round(xi + ro*cos(theta));
+    ord = round(yi + ro*sin(theta));
+    res = [abs, ord];
 end
