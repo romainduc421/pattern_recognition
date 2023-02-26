@@ -49,16 +49,15 @@ function my_tests()
 	end
 end
 
-
-
 function [fd,r,m,poly] = compute_fd(img)
 	N = 110; % nombre de valeurs d'angle
 	M = 63; % nombre des M premiers coefficients du vecteur R(f) / R(0)
-	h = size(img,1);
-	w = size(img,2);
-	m = barycentre(img);
-	x = m(1); y = m(2);
+	h = size(img,1); % hauteur de l'image
+	w = size(img,2); % largeur de l'image
+	m = barycentre(img);% calcul du barycentre de l'image
+	x = m(1); y = m(2); % coordonnées du barycentre
 
+	% initialisation
 	r = zeros(1,N);
 	poly = zeros(N,2);
 	t = linspace(0,2*pi,N);
@@ -71,7 +70,7 @@ function [fd,r,m,poly] = compute_fd(img)
 		% tant que l'on ne depasse pas encore les bordures de l'image
 		while(tmpX > 1 && tmpY > 1 && tmpX < w && tmpY < h)
 			% point qui se trouve sur la droite de l'angle
-			res = cartesianCoord(x,y,l,t(1,k));
+			res = cartesianCoord(x,y,l,t(1,k)); % on va de l'interieur vers l'exterieur
 			tmpX = res(1);
 			tmpY = res(2);
 			l = l+1;
@@ -83,23 +82,23 @@ function [fd,r,m,poly] = compute_fd(img)
 		iters = l;
 
 
-		% operation entre poly et tmp
+		% on parcourt le contour de l'image
 		for n = 1:iters
 			%calcul de la distance au barycentre en provenance du bord de l'image
-			res = cartesianCoord(bordAbs,bordOrd,-n,t(1,k));
+			res = cartesianCoord(bordAbs,bordOrd,-n,t(1,k)); % on va de l'exterieur vers l'interieur
 			tmpX = res(1);
 			tmpY = res(2);
 			% on s'arrete si on trouve un pixel blanc et on ajoute le contour dans le polygone
 			if (img(tmpY,tmpX) == 1)
 				poly(k,1)=tmpX;
 				poly(k,2)=tmpY;
-				r(1,k) = distanceEucl(x, y, tmpX, tmpY);
+				r(1,k) = distanceEucl(x, y, tmpX, tmpY);% distance euclidienne entre le barycentre et le point du contour
 				break;
 			end
 
 
 		end
-		if(n==iters)
+		if(n==iters) % si on a parcouru tout le contour sans trouver de pixel blanc
 			poly(k,1) = bordAbs;
 			poly(k,2) = bordOrd;
 			r(1,k) = distanceEucl(x, y, bordAbs, bordOrd);
@@ -109,16 +108,16 @@ function [fd,r,m,poly] = compute_fd(img)
 
 	end
 
-
+	% calcul du descripteur de Fourier
 	fd = zeros(1,N);
-	R(1, 1:M) = fft(r(1,1:M));
-	tf_r0 = R(1);
-	fd(1, 1:M) = abs(R(1,1:M))/abs(tf_r0);
+	R(1, 1:M) = fft(r(1,1:M));% calcul de la transformée de Fourier discrète
+	tf_r0 = R(1);% valeur de la transformée de Fourier discrète en 0
+	fd(1, 1:M) = abs(R(1,1:M))/abs(tf_r0); % calcul des M premiers coefficients du vecteur R(f) / R(0)
 
 
 end
 
-
+% calcul du barycentre d'une image img
 function m = barycentre(img)
 	%liste des points égaux à 1
 	[col, row] = find(img>0);
@@ -128,11 +127,12 @@ function m = barycentre(img)
 	m = mean([row, col]);   % on inverse row et col pour le barycentre pixel blanc
 end
 
-
+% distance euclidienne entre deux points
 function dist = distanceEucl(abs1, ord1, abs2, ord2)
 	dist = ((abs2 - abs1).^2 + (ord2 - ord1).^2) .^(0.5);
 end
 
+% calcul des coordonnées cartésiennes à partir des coordonnées polaires
 function res = cartesianCoord(xi, yi, ro, theta)
 	abs = round(xi + ro*cos(theta));
 	ord = round(yi + ro*sin(theta));
